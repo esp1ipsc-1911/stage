@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPSC Stage Designer</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">⬡</span>
+          <span class="logo-text">STAGE<span>FORGE</span></span>
+        </div>
+        <div class="stage-title-wrap">
+          <input id="stageName" type="text" value="New Stage" placeholder="Stage name..." />
+          <span class="stage-meta" id="stageMeta">Unsaved</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-ghost" id="btnNew" title="New Stage">+ New</button>
+        <button class="btn btn-ghost" id="btnLoad" title="Load Stage">Load</button>
+        <button class="btn btn-primary" id="btnSave" title="Save Stage">Save</button>
+        <button class="btn btn-ghost" id="btnExport" title="Export as JSON">Export</button>
+        <button class="btn btn-ghost" id="btnImport" title="Import JSON">Import</button>
+      </div>
+    </header>
+
+    <!-- Main layout -->
+    <div id="main">
+      <!-- Left sidebar: toolbox -->
+      <aside id="sidebar-left">
+        <div class="sidebar-section">
+          <div class="section-label">TOOLS</div>
+          <div class="toolgroup">
+            <button class="tool-btn active" data-tool="select" title="Select (V)">
+              <svg viewBox="0 0 24 24"><path d="M4 2l16 10-7 1-4 7z"/></svg>
+              <span>Select</span>
+            </button>
+            <button class="tool-btn" data-tool="move" title="Pan Canvas (H)">
+              <svg viewBox="0 0 24 24"><path d="M12 2l3 5h-2v4h4V9l5 3-5 3v-2h-4v4h2l-3 5-3-5h2v-4H7v2L2 12l5-3v2h4V7H9z"/></svg>
+              <span>Pan</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">ELEMENTS</div>
+          <div class="toolgroup elements-grid">
+            <button class="tool-btn" data-tool="target_paper" title="IPSC Paper Target">
+              <div class="element-preview paper-target-preview"></div>
+              <span>Paper</span>
+            </button>
+            <button class="tool-btn" data-tool="target_metal" title="Steel Popper">
+              <div class="element-preview metal-target-preview"></div>
+              <span>Popper</span>
+            </button>
+            <button class="tool-btn" data-tool="target_plate" title="Steel Plate">
+              <div class="element-preview plate-preview"></div>
+              <span>Plate</span>
+            </button>
+            <button class="tool-btn" data-tool="wall" title="Hard Cover / Barricade">
+              <div class="element-preview wall-preview"></div>
+              <span>Hard Cover</span>
+            </button>
+            <button class="tool-btn" data-tool="barrel" title="Barrel (Prop)">
+              <div class="element-preview barrel-preview"></div>
+              <span>Barrel</span>
+            </button>
+            <button class="tool-btn" data-tool="port" title="Shooting Port">
+              <div class="element-preview port-preview"></div>
+              <span>Port</span>
+            </button>
+            <button class="tool-btn" data-tool="start_box" title="Shooting Box (Start Position)">
+              <div class="element-preview startbox-preview"></div>
+              <span>Shooting Box</span>
+            </button>
+            <button class="tool-btn" data-tool="fault_line" title="Fault Line">
+              <div class="element-preview faultline-preview"></div>
+              <span>Fault Line</span>
+            </button>
+            <button class="tool-btn" data-tool="no_shoot" title="No-Shoot Target">
+              <div class="element-preview noshoot-preview"></div>
+              <span>No-Shoot</span>
+            </button>
+            <button class="tool-btn" data-tool="text_note" title="Text Note">
+              <div class="element-preview textnote-preview">T</div>
+              <span>Note</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">GRID</div>
+          <div class="grid-controls">
+            <label class="toggle-row">
+              <span>Show Grid</span>
+              <label class="toggle"><input type="checkbox" id="toggleGrid" checked><span class="slider"></span></label>
+            </label>
+            <label class="toggle-row">
+              <span>Snap to Grid</span>
+              <label class="toggle"><input type="checkbox" id="snapGrid" checked><span class="slider"></span></label>
+            </label>
+            <label class="control-row">
+              <span>Grid Size</span>
+              <select id="gridSize">
+                <option value="25">0.5 m</option>
+                <option value="50" selected>1 m</option>
+                <option value="100">2 m</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">STAGE INFO</div>
+          <div class="stage-info-form">
+            <label>Min. Rounds
+              <input type="number" id="minRounds" value="12" min="1" max="32" />
+            </label>
+            <label>Max. Rounds
+              <input type="number" id="maxRounds" value="12" min="1" max="32" />
+            </label>
+            <label>Scoring System
+              <select id="scoring">
+                <option>Comstock</option>
+                <option>Fixed Time</option>
+                <option>Virginia Count</option>
+              </select>
+            </label>
+            <label>Division
+              <select id="division">
+                <option>Open</option>
+                <option>Standard</option>
+                <option>Production</option>
+                <option>Classic</option>
+                <option>Revolver</option>
+                <option>PCC</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Canvas area -->
+      <main id="canvas-container">
+        <div id="canvas-toolbar">
+          <button class="mini-btn" id="btnZoomIn" title="Zoom In">+</button>
+          <span id="zoomLevel">100%</span>
+          <button class="mini-btn" id="btnZoomOut" title="Zoom Out">−</button>
+          <button class="mini-btn" id="btnZoomFit" title="Fit to Screen">⊞</button>
+          <div class="separator"></div>
+          <button class="mini-btn" id="btnUndo" title="Undo (Ctrl+Z)">↩</button>
+          <button class="mini-btn" id="btnRedo" title="Redo (Ctrl+Y)">↪</button>
+          <div class="separator"></div>
+          <button class="mini-btn" id="btnDelete" title="Delete Selected (Del)">🗑</button>
+          <button class="mini-btn" id="btnDuplicate" title="Duplicate Selected (Ctrl+D)">⧉</button>
+          <div class="separator"></div>
+          <span class="hint-text" id="canvasHint">Click to place elements</span>
+        </div>
+        <canvas id="stageCanvas"></canvas>
+        <div id="canvas-overlay">
+          <div id="selectionBox"></div>
+        </div>
+      </main>
+
+      <!-- Right sidebar: properties -->
+      <aside id="sidebar-right">
+        <div class="sidebar-section">
+          <div class="section-label">PROPERTIES</div>
+          <div id="propertiesPanel">
+            <div class="no-selection">
+              <span>Select an element<br/>to edit its properties</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">ELEMENTS LIST</div>
+          <div id="elementsList"></div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="section-label">SAVED STAGES</div>
+          <div id="savedStagesList"></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Load modal -->
+    <div id="loadModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>Load Stage</h2>
+          <button class="modal-close" id="closeLoadModal">✕</button>
+        </div>
+        <div id="loadModalList"></div>
+      </div>
+    </div>
+
+    <!-- Context menu -->
+    <div id="contextMenu" class="hidden">
+      <button data-action="duplicate">Duplicate</button>
+      <button data-action="delete">Delete</button>
+      <button data-action="bringFront">Bring to Front</button>
+      <button data-action="sendBack">Send to Back</button>
+    </div>
+  </div>
+
+  <input type="file" id="importFile" accept=".json" style="display:none" />
+  <script src="app.js"></script>
+</body>
+</html>
