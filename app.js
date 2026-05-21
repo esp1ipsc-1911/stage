@@ -12,16 +12,16 @@ const STORAGE_KEY = 'stageforge_stages';
 const GRID_PX = 50; // pixels per meter at 1:1
 
 const ELEMENT_DEFS = {
-  target_paper: { label: 'IPSC Target',    color: '#c8a04a', dot: '#f5e8c8', w: 18, h: 30 },
-  target_metal: { label: 'Steel Popper',   color: '#7a8090', dot: '#a0b0c0', w: 16, h: 28 },
-  target_plate: { label: 'Steel Plate',    color: '#5a6070', dot: '#8090a0', w: 20, h: 20 },
-  no_shoot:     { label: 'No-Shoot',       color: '#c03030', dot: '#ff6060', w: 18, h: 30 },
-  wall:         { label: 'Hard Cover',     color: '#5055a0', dot: '#8888ff', w: 80, h: 10 },
-  barrel:       { label: 'Barrel',         color: '#786030', dot: '#a08040', w: 20, h: 28 },
-  port:         { label: 'Shooting Port',  color: '#556655', dot: '#88aa88', w: 50, h: 40 },
-  start_box:    { label: 'Shooting Box',   color: '#2ecc71', dot: '#2ecc71', w: 80, h: 60 },
-  fault_line:   { label: 'Fault Line',     color: '#e03030', dot: '#ff4040', w: 120, h: 8 },
-  text_note:    { label: 'Note',           color: '#e8eaed', dot: '#aaaaaa', w: 80, h: 30 },
+  target_paper: { label: 'IPSC Target',    color: '#d4a855', dot: '#d4a855', w: 24, h: 38 },
+  target_metal: { label: 'Steel Popper',   color: '#c0c8d0', dot: '#a0b0c0', w: 22, h: 36 },
+  target_plate: { label: 'Steel Plate',    color: '#b0b8c0', dot: '#8090a0', w: 22, h: 22 },
+  no_shoot:     { label: 'No-Shoot',       color: '#f0f0e8', dot: '#ccccaa', w: 24, h: 38 },
+  wall:         { label: 'Hard Cover',     color: '#5055a0', dot: '#8888ff', w: 100, h: 12 },
+  barrel:       { label: 'Barrel',         color: '#786030', dot: '#a08040', w: 22, h: 22 },
+  port:         { label: 'Shooting Port',  color: '#556655', dot: '#88aa88', w: 60, h: 50 },
+  start_box:    { label: 'Shooting Box',   color: '#2ecc71', dot: '#2ecc71', w: 100, h: 70 },
+  fault_line:   { label: 'Fault Line',     color: '#e03030', dot: '#ff4040', w: 150, h: 8 },
+  text_note:    { label: 'Note',           color: '#e8eaed', dot: '#aaaaaa', w: 90, h: 30 },
 };
 
 // ── State ─────────────────────────────────────────────────────────────────
@@ -180,11 +180,11 @@ function drawElement(el) {
   const x = -el.w / 2, y = -el.h / 2;
 
   switch (el.type) {
-    case 'target_paper': drawPaperTarget(x, y, el.w, el.h, el.color || '#c8a04a', el.zone || 'A'); break;
-    case 'target_metal': drawMetalPopper(x, y, el.w, el.h, el.color || '#7a8090'); break;
-    case 'target_plate': drawPlate(x, y, el.w, el.h, el.color || '#5a6070'); break;
+    case 'target_paper': drawPaperTarget(x, y, el.w, el.h); break;
+    case 'target_metal': drawMetalPopper(x, y, el.w, el.h); break;
+    case 'target_plate': drawPlate(x, y, el.w, el.h); break;
     case 'no_shoot':     drawNoShoot(x, y, el.w, el.h); break;
-    case 'wall':         drawHardCover(x, y, el.w, el.h, el.color || '#5055a0'); break;
+    case 'wall':         drawHardCover(x, y, el.w, el.h); break;
     case 'barrel':       drawBarrel(x, y, el.w, el.h); break;
     case 'port':         drawShootingPort(x, y, el.w, el.h); break;
     case 'start_box':    drawShootingBox(x, y, el.w, el.h); break;
@@ -229,181 +229,311 @@ function drawElement(el) {
 
 // ── Element drawing functions ─────────────────────────────────────────────
 
-function drawPaperTarget(x, y, w, h, color, zone) {
-  // Body — standard IPSC cardboard color
-  ctx.fillStyle = '#f5e8c8';
-  ctx.strokeStyle = '#8b6914';
-  ctx.lineWidth = 1;
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeRect(x, y, w, h);
-  // A-zone (upper thoracic)
-  ctx.fillStyle = 'rgba(220,60,60,0.3)';
-  ctx.fillRect(x + w * 0.15, y + h * 0.1, w * 0.7, h * 0.35);
-  ctx.strokeStyle = '#cc4444';
-  ctx.lineWidth = 0.5;
-  ctx.strokeRect(x + w * 0.15, y + h * 0.1, w * 0.7, h * 0.35);
-  // C-zone outer scoring line
-  ctx.strokeStyle = 'rgba(139,105,20,0.5)';
-  ctx.strokeRect(x + w * 0.05, y + h * 0.08, w * 0.9, h * 0.6);
-  // Zone label
-  ctx.fillStyle = '#8b6914';
-  ctx.font = `bold ${Math.max(5, w * 0.25)}px Barlow Condensed`;
-  ctx.textAlign = 'center';
-  ctx.fillText('A', x + w / 2, y + h * 0.35);
+/**
+ * Draw the standard IPSC/USPSA cardboard target silhouette.
+ * Shape: octagon-ish with a pointed top wedge.
+ * Lower ~40% is painted black (the scoring zone underside).
+ * Upper portion is natural cardboard tan.
+ */
+function ipscTargetPath(x, y, w, h) {
+  // The IPSC target is roughly:
+  //  - pointed pentagonal top (the "head" area)
+  //  - octagonal/rectangular body below
+  // Proportions based on real 35x45cm target
+  const cx = x + w / 2;
+  const tipY = y;                     // top point
+  const shoulderY = y + h * 0.22;    // where point widens to full width
+  const cut = w * 0.12;              // diagonal shoulder cut
+  const bodyBot = y + h * 0.85;      // bottom of main body
+  const footCut = w * 0.08;          // bottom corner clip
+
+  ctx.beginPath();
+  ctx.moveTo(cx, tipY);                         // top point
+  ctx.lineTo(x + w - cut, shoulderY);           // top-right shoulder
+  ctx.lineTo(x + w, shoulderY + cut);           // right shoulder
+  ctx.lineTo(x + w, bodyBot - footCut);         // right side
+  ctx.lineTo(x + w - footCut, bodyBot);         // bottom-right clip
+  ctx.lineTo(x + footCut, bodyBot);             // bottom-left clip
+  ctx.lineTo(x, bodyBot - footCut);             // left side
+  ctx.lineTo(x, shoulderY + cut);               // left shoulder
+  ctx.lineTo(x + cut, shoulderY);               // top-left shoulder
+  ctx.closePath();
 }
 
-function drawMetalPopper(x, y, w, h, color) {
-  ctx.fillStyle = color;
-  ctx.strokeStyle = '#a0b0c0';
-  ctx.lineWidth = 1.5;
-  const r = w * 0.45;
-  // Head
+function drawPaperTarget(x, y, w, h) {
+  // -- Cardboard body (tan)
+  ctx.save();
+  ipscTargetPath(x, y, w, h);
+  ctx.fillStyle = '#d4a855';
+  ctx.fill();
+
+  // -- Black painted lower zone (approx bottom 42% = D+C overlap area)
+  const paintTop = y + h * 0.52;
+  const bodyBot  = y + h * 0.85;
+  const footCut  = w * 0.08;
+  ctx.save();
+  ctx.clip(); // clip to target shape
+  ctx.fillStyle = '#1a1a1a';
   ctx.beginPath();
-  ctx.arc(x + w / 2, y + r + 2, r, 0, Math.PI * 2);
+  ctx.moveTo(x, paintTop);
+  ctx.lineTo(x + w, paintTop);
+  ctx.lineTo(x + w, bodyBot - footCut);
+  ctx.lineTo(x + w - footCut, bodyBot);
+  ctx.lineTo(x + footCut, bodyBot);
+  ctx.lineTo(x, bodyBot - footCut);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // -- Outline
+  ipscTargetPath(x, y, w, h);
+  ctx.strokeStyle = '#8a6820';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // -- A-zone indicator lines (scoring rings, simplified)
+  ctx.strokeStyle = 'rgba(139,104,32,0.5)';
+  ctx.lineWidth = 0.5;
+  // Outer C-zone
+  ctx.save();
+  ctx.clip();
+  // Just show the A-zone dashed box in the upper cardboard area
+  const az_x = x + w * 0.2;
+  const az_y = y + h * 0.26;
+  const az_w = w * 0.6;
+  const az_h = h * 0.24;
+  ctx.setLineDash([2, 2]);
+  ctx.strokeRect(az_x, az_y, az_w, az_h);
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function drawMetalPopper(x, y, w, h) {
+  // Classic IPSC Steel Popper: round head on rectangular body, on a stand
+  // Proportions: head ~30% of height, body ~45%, stand ~25%
+  const cx = x + w / 2;
+  const headR  = w * 0.38;
+  const headCY = y + headR + 1;
+  const bodyTop = headCY + headR * 0.7;
+  const bodyBot = y + h * 0.78;
+  const bodyW   = w * 0.45;
+  const standH  = h - (bodyBot - y);
+  const standY  = bodyBot;
+
+  // -- Stand base (dark metal)
+  ctx.fillStyle = '#2a2e32';
+  ctx.strokeStyle = '#444850';
+  ctx.lineWidth = 1;
+  // Base feet
+  const baseW = w * 0.9;
+  const baseH = standH * 0.35;
+  ctx.fillRect(x + (w - baseW) / 2, y + h - baseH, baseW, baseH);
+  ctx.strokeRect(x + (w - baseW) / 2, y + h - baseH, baseW, baseH);
+  // Vertical post
+  const postW = w * 0.1;
+  ctx.fillRect(cx - postW / 2, standY, postW, standH - baseH + 1);
+  ctx.strokeRect(cx - postW / 2, standY, postW, standH - baseH + 1);
+
+  // -- Body (steel gray, slightly tapered)
+  ctx.fillStyle = '#b0bcc8';
+  ctx.strokeStyle = '#7a8898';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - bodyW / 2, bodyTop);
+  ctx.lineTo(cx + bodyW / 2, bodyTop);
+  ctx.lineTo(cx + bodyW * 0.4, bodyBot);
+  ctx.lineTo(cx - bodyW * 0.4, bodyBot);
+  ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  // Body
-  ctx.fillRect(x + w * 0.2, y + r * 2 + 2, w * 0.6, h - r * 2 - 6);
-  ctx.strokeRect(x + w * 0.2, y + r * 2 + 2, w * 0.6, h - r * 2 - 6);
-  // Shine
-  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+
+  // -- Head (circle)
+  ctx.fillStyle = '#c8d4dc';
+  ctx.strokeStyle = '#7a8898';
+  ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(x + w / 2 - r * 0.2, y + r * 0.5 + 2, r * 0.3, 0, Math.PI * 2);
+  ctx.arc(cx, headCY, headR, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // -- Highlight on head
+  ctx.fillStyle = 'rgba(255,255,255,0.18)';
+  ctx.beginPath();
+  ctx.arc(cx - headR * 0.25, headCY - headR * 0.25, headR * 0.35, 0, Math.PI * 2);
   ctx.fill();
 }
 
-function drawPlate(x, y, w, h, color) {
-  const r = Math.min(w, h) / 2;
-  ctx.fillStyle = color;
-  ctx.strokeStyle = '#8090a0';
+function drawPlate(x, y, w, h) {
+  // Steel plate: round, on a small stand
+  const cx = x + w / 2;
+  const r  = Math.min(w, h * 0.72) / 2;
+  const plateCY = y + r + 2;
+  const standH  = h - plateCY - r + y;
+  const postW   = w * 0.1;
+  const baseW   = w * 0.8;
+  const baseH   = Math.max(3, standH * 0.4);
+
+  // Stand post
+  ctx.fillStyle = '#2a2e32';
+  ctx.strokeStyle = '#444850';
+  ctx.lineWidth = 1;
+  ctx.fillRect(cx - postW / 2, plateCY + r * 0.6, postW, h - (plateCY + r * 0.6) - baseH);
+  // Base
+  ctx.fillRect(x + (w - baseW) / 2, y + h - baseH, baseW, baseH);
+  ctx.strokeRect(x + (w - baseW) / 2, y + h - baseH, baseW, baseH);
+
+  // Plate
+  ctx.fillStyle = '#b0bcc8';
+  ctx.strokeStyle = '#7a8898';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.arc(x + w / 2, y + h / 2, r, 0, Math.PI * 2);
+  ctx.arc(cx, plateCY, r, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.1)';
+
+  // Highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
   ctx.beginPath();
-  ctx.arc(x + w / 2 - r * 0.2, y + h / 2 - r * 0.2, r * 0.3, 0, Math.PI * 2);
+  ctx.arc(cx - r * 0.2, plateCY - r * 0.2, r * 0.3, 0, Math.PI * 2);
   ctx.fill();
 }
 
 function drawNoShoot(x, y, w, h) {
-  ctx.fillStyle = 'rgba(224,48,48,0.15)';
-  ctx.strokeStyle = '#e03030';
+  // No-Shoot: same IPSC shape but white/off-white, with "NS" printed
+  ctx.save();
+  ipscTargetPath(x, y, w, h);
+  ctx.fillStyle = '#f0f0e4';
+  ctx.fill();
+  ipscTargetPath(x, y, w, h);
+  ctx.strokeStyle = '#999988';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+
+  // NS label
+  ctx.fillStyle = '#333322';
+  ctx.font = `bold ${Math.max(6, h * 0.22)}px Bebas Neue`;
+  ctx.textAlign = 'center';
+  ctx.fillText('NS', x + w / 2, y + h * 0.62);
+  ctx.restore();
+}
+
+function drawHardCover(x, y, w, h) {
+  // Hard Cover / Barricade: solid dark wall with diagonal hash marks
+  ctx.fillStyle = '#3a3c5a';
+  ctx.strokeStyle = '#6668a8';
   ctx.lineWidth = 1.5;
   ctx.fillRect(x, y, w, h);
   ctx.strokeRect(x, y, w, h);
-  ctx.fillStyle = '#e03030';
-  ctx.font = `bold ${h * 0.3}px Bebas Neue`;
-  ctx.textAlign = 'center';
-  ctx.fillText('NS', x + w / 2, y + h * 0.65);
-}
-
-function drawHardCover(x, y, w, h, color) {
-  ctx.fillStyle = color;
-  ctx.strokeStyle = '#8888ff';
+  // Diagonal hatch
+  ctx.strokeStyle = 'rgba(180,180,255,0.12)';
   ctx.lineWidth = 1;
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeRect(x, y, w, h);
-  // Hatch pattern
-  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-  ctx.lineWidth = 0.5;
-  for (let i = 0; i < w; i += 8) {
+  const spacing = 8;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  for (let d = -h; d < w + h; d += spacing) {
     ctx.beginPath();
-    ctx.moveTo(x + i, y);
-    ctx.lineTo(x + i, y + h);
+    ctx.moveTo(x + d, y);
+    ctx.lineTo(x + d + h, y + h);
     ctx.stroke();
+  }
+  ctx.restore();
+  // HC label if tall enough
+  if (h > 10) {
+    ctx.fillStyle = 'rgba(180,180,255,0.5)';
+    ctx.font = `bold ${Math.min(h * 0.55, 9)}px Barlow Condensed`;
+    ctx.textAlign = 'center';
+    ctx.fillText('HC', x + w / 2, y + h * 0.75);
   }
 }
 
 function drawBarrel(x, y, w, h) {
-  ctx.fillStyle = '#3d3520';
-  ctx.strokeStyle = '#786030';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 4);
-  ctx.fill();
-  ctx.stroke();
-  ctx.strokeStyle = '#a08040';
-  ctx.lineWidth = 1;
-  for (let i = 1; i < 4; i++) {
-    ctx.strokeRect(x + 2, y + (h / 4) * i, w - 4, 2);
-  }
+  // Tire/Barrel prop — top-down view: concentric circles
+  const cx = x + w / 2, cy = y + h / 2;
+  const r = Math.min(w, h) / 2 - 1;
+  ctx.fillStyle = '#1e1e1e';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#484840'; ctx.lineWidth = r * 0.35;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.72, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#282820'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#333328';
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.3, 0, Math.PI * 2); ctx.fill();
 }
 
 function drawShootingPort(x, y, w, h) {
-  ctx.strokeStyle = '#556655';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([]);
+  // Wall with a rectangular opening
+  ctx.fillStyle = '#3a3c5a';
+  ctx.strokeStyle = '#6668a8';
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(x, y, w, h);
   ctx.strokeRect(x, y, w, h);
-  const pw = w * 0.4, ph = h * 0.4;
+  // Opening (cut-out)
+  const pw = w * 0.42, ph = h * 0.45;
   const px2 = x + (w - pw) / 2, py2 = y + (h - ph) / 2;
-  ctx.fillStyle = 'rgba(136,170,136,0.2)';
+  ctx.fillStyle = '#0e0f11'; // canvas background showing through
   ctx.fillRect(px2, py2, pw, ph);
   ctx.strokeStyle = '#88aa88';
   ctx.lineWidth = 1;
   ctx.strokeRect(px2, py2, pw, ph);
-  ctx.fillStyle = '#88aa88';
-  ctx.font = `${Math.min(ph * 0.7, 8)}px Barlow Condensed`;
-  ctx.textAlign = 'center';
-  ctx.fillText('PORT', x + w / 2, py2 + ph * 0.75);
 }
 
 function drawShootingBox(x, y, w, h) {
-  // Per IPSC rules: Shooting Box = defined area where shooter must start
-  ctx.fillStyle = 'rgba(46,204,113,0.08)';
+  // Per IPSC rules: Shooting Box = defined start position
+  ctx.fillStyle = 'rgba(46,204,113,0.07)';
   ctx.fillRect(x, y, w, h);
   ctx.strokeStyle = '#2ecc71';
   ctx.lineWidth = 1.5;
-  ctx.setLineDash([6, 4]);
+  ctx.setLineDash([7, 4]);
   ctx.strokeRect(x, y, w, h);
   ctx.setLineDash([]);
-  ctx.fillStyle = '#2ecc71';
-  ctx.font = `bold ${Math.min(h * 0.3, 10)}px Bebas Neue`;
+  ctx.fillStyle = 'rgba(46,204,113,0.7)';
+  ctx.font = `bold ${Math.min(h * 0.28, 11)}px Bebas Neue`;
   ctx.textAlign = 'center';
-  ctx.fillText('SHOOTING BOX', x + w / 2, y + h * 0.65);
+  ctx.fillText('SHOOTING BOX', x + w / 2, y + h / 2 + Math.min(h * 0.1, 4));
 }
 
 function drawFaultLine(x, y, w, h) {
-  // Per IPSC rules: Fault Lines define the Shooting Area boundary
+  // Fault Lines define the Shooting Area boundary
   ctx.strokeStyle = '#e03030';
   ctx.lineWidth = 2;
-  ctx.setLineDash([8, 5]);
+  ctx.setLineDash([10, 5]);
   ctx.beginPath();
   ctx.moveTo(x, y + h / 2);
   ctx.lineTo(x + w, y + h / 2);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#e03030';
-  ctx.font = `${Math.min(h, 8)}px Barlow Condensed`;
+  ctx.fillStyle = 'rgba(224,48,48,0.8)';
+  ctx.font = `bold ${Math.min(8, h + 4)}px Barlow Condensed`;
   ctx.textAlign = 'center';
-  ctx.fillText('FAULT LINE', x + w / 2, y - 2);
+  ctx.fillText('FAULT LINE', x + w / 2, y - 3);
 }
 
 function drawTextNote(x, y, w, h, text) {
-  ctx.fillStyle = 'rgba(40,42,46,0.8)';
+  ctx.fillStyle = 'rgba(40,42,46,0.85)';
   ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
   ctx.strokeRect(x, y, w, h);
   ctx.setLineDash([]);
   ctx.fillStyle = '#e8eaed';
-  ctx.font = `${Math.min(h * 0.35, 12)}px Barlow`;
+  const fs = Math.min(h * 0.35, 12);
+  ctx.font = `${fs}px Barlow`;
   ctx.textAlign = 'center';
 
   const words = text.split(' ');
-  let line = '', lines = [], lh = Math.min(h * 0.35, 12) + 2;
+  let line = '', lines = [], lh = fs + 2;
   for (const word of words) {
     const test = line + (line ? ' ' : '') + word;
     if (ctx.measureText(test).width > w - 6) {
       if (line) lines.push(line);
       line = word;
-    } else {
-      line = test;
-    }
+    } else { line = test; }
   }
   if (line) lines.push(line);
-
   const startY = y + h / 2 - (lines.length - 1) * lh / 2;
   lines.forEach((l, i) => ctx.fillText(l, x + w / 2, startY + i * lh));
 }
